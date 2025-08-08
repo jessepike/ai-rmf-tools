@@ -1,0 +1,117 @@
+# Product Requirements Document (PRD): AI Risk Management Resource Site
+
+**Author:**  Jesse Pike
+**Date:**    8-8-25
+**Status:** Draft
+
+---
+
+## 1. [Overview](#1-overview)
+Provide a concise summary of the project—what it is, whom it's for, and its mission.
+
+---
+
+## 2. [Objectives & Success Metrics](#2-objectives--success-metrics)
+#- **Purpose**: Why build this site? What user problems or gaps does it address?
+#- **Goals**: e.g., help organizations crosswalk AI frameworks, deliver ready-to-use templates, introduce automation workflows.
+#- **Success Metrics**: Monthly users, newsletter signups, template downloads, contributor count, assessment tool usage.
+- **Simplify AI governance**: Provide clear crosswalks, summaries, and starting templates tailored to practitioner needs.
+- **Enable self-service automation**: Support self-assessment, FAIR mini-quantification, model/system card generation.
+- **Foster community engagement**: Encourage contributions, crosswalk improvements, and ownership through open-source participation.
+
+### Success Metrics (first 6 months)
+- **Traffic**: 2,000–5,000 unique visitors/month  
+- **Engagement**: 500 newsletter signups; 100 template/download exports  
+- **Early adoption**: 50+ users completing the self-assessment wizard  
+- **Community traction**: 10+ external contributors engaging via PRs or Discussions  
+- **Retention**: 30% of users returning to site tools monthly  
+
+---
+
+## 3. [User Personas & Use Cases](#3-user-personas--use-cases)
+Define 2–4 key personas—e.g.:
+- **Compliance Lead** — needs mapping across frameworks.
+- **AI Engineer / MLE** — seeks model card templates & assessment tools.
+- **Small Business GRC Manager** — wants straightforward governance starters.
+
+Include their goals and workflow context.
+
+---
+
+## 4. [Scope & Features](#4-scope--features)
+### 4.1 MVP Scope
+- Resource Directory + Search
+- Crosswalk Viewer (e.g., NIST ↔ CSA AICM ↔ OWASP LLM risks)
+- Downloadable Templates (model/system cards, checklists)
+
+### 4.2 Future Enhancements
+- Self-Assessment Wizard (RMF maturity + roadmap)
+- FAIR-based mini-risk quant tool
+- Export APIs (CSV/JSON for compliance platforms)
+- AI-Assistant Chatbot (post-launch)
+
+---
+
+## 5. [Requirements](#5-requirements)
+### 5.1 Functional Requirements
+- Browse and filter framework entries
+- Interactive crosswalk UI
+- Template generation & download
+- Assessment tool with save/export
+
+### 5.2 Non-Functional Requirements
+- Responsive design, accessible content
+- SEO-friendly & performance-optimized (Next.js + Vercel)
+- Secure code and data handling
+
+### 5.3 Technical Stack Highlights
+- Frontend: Next.js, Tailwind CSS, Vercel hosting  
+- Workflow: GitHub (repo/CI), Linear (tracking)  
+- AI Tools: Cursor / Copilot (dev); optional chatbot using embedded doc search + LLM
+
+---
+
+## 6. [Assumptions, Dependencies & Risks](#6-assumptions-dependencies--risks)
+- Assumes open-source documentation from NIST, CSA, ISO, etc., is accessible and licensable.
+- Dependent on accuracy of incoming framework updates.
+- Risk of hallucinations if chatbot added—mitigate with citations and source control.
+
+---
+
+## 7. [Release Roadmap & Milestones](#7-release-roadmap--milestones)
+| Phase | Features                    |
+|-------|------------------------------|
+| Phase 1 | Directory + Crosswalk v1   |
+| Phase 2 | Templates + Assessment tools |
+| Phase 3 | FAIR mini-quant, Export APIs |
+| Phase 4 | AI Chatbot integration      |
+
+---
+
+## 8. [Acceptance Criteria](#8-acceptance-criteria)
+Define “done” for each feature:
+- Directory is searchable, displays key metadata.
+- Crosswalk visual works across selected frameworks.
+- Templates generate downloadable files.
+- Assessment wizard delivers a results dashboard + export.
+
+---
+
+## 9. [Stakeholders & Reviewers](#9-stakeholders--reviewers)
+- Product Owner / Maintainer(s)  
+- Engineering Lead  
+- Domain Advisors (GRC, risk management)  
+- Community Contributors / Reviewers
+
+---
+
+## 10. [References & Resources](#10-references--resources)
+- NIST AI RMF & 600-1  
+- CSA AICM  
+- OWASP LLM Top 10  
+- MITRE ATLAS  
+- ISO 42001 / 23894   
+- EU AI Act  
+(Link each to authoritative source)
+
+---
