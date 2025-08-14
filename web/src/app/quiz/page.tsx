@@ -10,7 +10,7 @@ export default function QuizPage() {
           </h1>
           
           <p className="text-xl text-gray-600 mb-8">
-            Evaluate your organization's AI governance maturity and receive personalized recommendations based on the official NIST AI RMF standards.
+            Evaluate your organization&apos;s AI governance maturity and receive personalized recommendations based on the official NIST AI RMF standards.
           </p>
 
           <div className="bg-white rounded-lg shadow-xl p-8 mb-8">
@@ -20,7 +20,7 @@ export default function QuizPage() {
             
             <div className="grid md:grid-cols-2 gap-6 text-left">
               <div>
-                <h3 className="font-semibold text-gray-700 mb-2">What You'll Get:</h3>
+                <h3 className="font-semibold text-gray-700 mb-2">What You&apos;ll Get:</h3>
                 <ul className="space-y-2 text-gray-600">
                   <li>• AI governance maturity score (0-5 scale)</li>
                   <li>• NIST-aligned tier assessment</li>
