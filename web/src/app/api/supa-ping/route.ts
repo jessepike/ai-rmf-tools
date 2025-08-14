@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   // public health probe
-  const health = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`);
+  const health = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`, { cache: 'no-store' });
   // SDK wiring probe (no auth required)
   const { data, error } = await supabase.auth.getSession();
   return Response.json({
