@@ -2,48 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-
-// Temporary sample questions for testing
-const sampleQuestions = [
-  {
-    id: 'gov_1_1',
-    function: 'GOVERN' as const,
-    subcategory: 'GOVERN.1.1',
-    weight: 'critical' as const,
-    text: 'Does your organization have documented AI governance policies?',
-    options: [
-      { value: 2, text: 'Yes, comprehensive and current policies' },
-      { value: 1, text: 'Yes, but policies need updating' },
-      { value: 0, text: 'No formal policies exist' }
-    ]
-  },
-  {
-    id: 'gov_2_1',
-    function: 'GOVERN' as const,
-    subcategory: 'GOVERN.2.1',
-    weight: 'critical' as const,
-    text: 'Are AI risk management roles and responsibilities clearly defined?',
-    options: [
-      { value: 2, text: 'Yes, with documented responsibilities' },
-      { value: 1, text: 'Yes, but informally defined' },
-      { value: 0, text: 'No defined roles exist' }
-    ]
-  },
-  {
-    id: 'gov_2_3',
-    function: 'GOVERN' as const,
-    subcategory: 'GOVERN.2.3',
-    weight: 'critical' as const,
-    text: 'Does executive leadership take responsibility for AI system risks?',
-    options: [
-      { value: 2, text: 'Yes, with formal accountability' },
-      { value: 1, text: 'Yes, but informal oversight' },
-      { value: 0, text: 'No executive involvement' }
-    ]
-  }
-];
+import { getAvailableQuestions, QuizQuestion } from '@/data/questions';
 
 export default function AssessPage() {
+  const questions = getAvailableQuestions();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [responses, setResponses] = useState<Record<string, number>>({});
   const [isComplete, setIsComplete] = useState(false);
@@ -53,7 +15,7 @@ export default function AssessPage() {
   };
 
   const handleNext = () => {
-    if (currentQuestion < sampleQuestions.length - 1) {
+    if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
       setIsComplete(true);
@@ -66,7 +28,7 @@ export default function AssessPage() {
     }
   };
 
-  const currentQ = sampleQuestions[currentQuestion];
+  const currentQ = questions[currentQuestion];
   const selectedValue = responses[currentQ?.id];
   const canProceed = selectedValue !== undefined;
 
@@ -83,7 +45,7 @@ export default function AssessPage() {
             Assessment Complete!
           </h1>
           <p className="text-gray-600 mb-8 leading-relaxed">
-            Thank you for completing the sample questions. The full assessment will calculate your GOVERN maturity score and provide detailed recommendations.
+            Thank you for completing the GOVERN assessment. You answered {questions.length} questions. Next we&apos;ll calculate your maturity score and provide personalized recommendations.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button 
@@ -117,7 +79,7 @@ export default function AssessPage() {
           <div className="mb-8 p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
             <div className="flex justify-between items-center mb-4">
               <span className="text-sm font-medium text-white/80">
-                Question {currentQuestion + 1} of {sampleQuestions.length}
+                Question {currentQuestion + 1} of {questions.length}
               </span>
               <span className="text-sm font-medium bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 GOVERN Function
@@ -126,7 +88,7 @@ export default function AssessPage() {
             <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
               <div 
                 className="bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
-                style={{ width: `${((currentQuestion + 1) / sampleQuestions.length) * 100}%` }}
+                style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
               />
             </div>
           </div>
@@ -141,7 +103,9 @@ export default function AssessPage() {
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                   currentQ.weight === 'critical' 
                     ? 'bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-200'
-                    : 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-200'
+                    : currentQ.weight === 'important'
+                    ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-200'
+                    : 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200'
                 }`}>
                   {currentQ.weight.toUpperCase()}
                 </span>
@@ -202,7 +166,7 @@ export default function AssessPage() {
                   : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg'
               }`}
             >
-              {currentQuestion === sampleQuestions.length - 1 ? 'Complete Assessment →' : 'Next →'}
+              {currentQuestion === questions.length - 1 ? 'Complete Assessment →' : 'Next →'}
             </button>
           </div>
         </div>
