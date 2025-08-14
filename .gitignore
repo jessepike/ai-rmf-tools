@@ -1,0 +1,14 @@
+# OS/IDE
+.DS_Store
+.vscode/
+
+# Env (root + web)
+.env
+.env.local
+.env.*.local
+
+# Builds & deps (defensive if anyone runs npm at root)
+node_modules/
+.next/
+out/
+*.log

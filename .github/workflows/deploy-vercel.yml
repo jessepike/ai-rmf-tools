@@ -1,0 +1,48 @@
+name: Deploy (Vercel)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Pull Vercel project settings (creates .vercel with project linkage)
+      - name: Vercel pull
+        run: npx vercel pull --yes --environment=${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      # Build with env from GitHub Secrets
+      - name: Build
+        run: npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Deploy: PRs -> preview; main -> production
+      - name: Deploy
+        run: >
+          npx vercel deploy
+          --prebuilt
+          --token=${{ secrets.VERCEL_TOKEN }}
+          ${{ github.ref == 'refs/heads/main' && '--prod' || '' }}
+
