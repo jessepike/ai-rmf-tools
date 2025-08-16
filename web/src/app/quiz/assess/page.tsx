@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getAvailableQuestions } from '@/data/questions';
-import { submitQuiz, validateEmail, type QuizResponse } from '@/lib/api-client';
+import { submitQuiz, validateEmail } from '@/lib/api-client';
+import { QuizResponse } from '@/lib/scoring';
 
 export default function AssessPage() {
   const router = useRouter();
@@ -76,8 +76,9 @@ export default function AssessPage() {
 
       router.push(`/quiz/results?${resultsParams.toString()}`);
 
-    } catch (error: any) {
-      setSubmitError(error.message || 'Failed to submit assessment. Please try again.');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit assessment. Please try again.';
+      setSubmitError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -185,7 +186,7 @@ export default function AssessPage() {
 
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
               <p className="text-blue-800 text-sm">
-                <strong>What happens next:</strong> We'll calculate your AI governance maturity score, 
+                <strong>What happens next:</strong> We&apos;ll calculate your AI governance maturity score, 
                 generate personalized recommendations, and email you a detailed PDF report within minutes.
               </p>
             </div>
