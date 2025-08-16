@@ -1,0 +1,223 @@
+// lib/api-client.ts - Frontend API client for quiz submission
+// Copy this entire file content to your lib/api-client.ts
+
+
+import { QuizResponse } from './scoring';
+
+export interface SubmitQuizPayload {
+  email: string;
+  organizationName?: string;
+  responses: QuizResponse[];
+  completedAt: string;
+}
+
+export interface SubmitQuizResult {
+  assessmentId: string;
+  governScore: number;
+  maturityTier: "Emerging" | "Developing" | "Maturing" | "Optimized";
+  insights: {
+    strongestArea: string;
+    priorityFocus: string;
+  };
+  reportStatus: "processing" | "sent";
+}
+
+export class APIError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public response?: any
+  ) {
+    super(message);
+    this.name = 'APIError';
+  }
+}
+
+/**
+ * Submit quiz results to the backend API
+ */
+export async function submitQuiz(payload: SubmitQuizPayload): Promise<SubmitQuizResult> {
+  try {
+    const response = await fetch('/api/submit-quiz', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new APIError(
+        data.error || 'Failed to submit quiz',
+        response.status,
+        data
+      );
+    }
+
+    return data;
+  } catch (error) {
+    if (error instanceof APIError) {
+      throw error;
+    }
+    
+    // Network or other errors
+    throw new APIError(
+      'Network error: Please check your connection and try again',
+      0
+    );
+  }
+}
+
+/**
+ * Validate email format
+ */
+export function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Validate quiz responses
+ */
+export function validateQuizResponses(responses: QuizResponse[]): string[] {
+  const errors: string[] = [];
+
+  if (!responses || responses.length === 0) {
+    errors.push('Please answer at least one question');
+    return errors;
+  }
+
+  // Check for missing responses
+  const unansweredQuestions = responses.filter(r => r.selectedValue === undefined || r.selectedValue === null);
+  if (unansweredQuestions.length > 0) {
+    errors.push(`Please answer all questions (${unansweredQuestions.length} remaining)`);
+  }
+
+  // Validate individual responses
+  responses.forEach((response, index) => {
+    if (!response.questionId) {
+      errors.push(`Question ${index + 1}: Missing question ID`);
+    }
+    if (!response.subcategory) {
+      errors.push(`Question ${index + 1}: Missing subcategory`);
+    }
+    if (!response.weight || !['critical', 'important', 'good-to-have'].includes(response.weight)) {
+      errors.push(`Question ${index + 1}: Invalid weight`);
+    }
+    if (typeof response.selectedValue !== 'number' || response.selectedValue < 0 || response.selectedValue > 2) {
+      errors.push(`Question ${index + 1}: Invalid selected value`);
+    }
+  });
+
+  return errors;
+}
+
+/**
+ * Format maturity tier for display
+ */
+export function formatMaturityTier(tier: string): { name: string; color: string; description: string } {
+  switch (tier) {
+    case 'Emerging':
+      return {
+        name: 'Emerging',
+        color: '#dc3545',
+        description: 'Beginning your AI governance journey'
+      };
+    case 'Developing':
+      return {
+        name: 'Developing', 
+        color: '#fd7e14',
+        description: 'Basic practices are established'
+      };
+    case 'Maturing':
+      return {
+        name: 'Maturing',
+        color: '#0066cc', 
+        description: 'Strong fundamentals in place'
+      };
+    case 'Optimized':
+      return {
+        name: 'Optimized',
+        color: '#28a745',
+        description: 'Leading practices implemented'
+      };
+    default:
+      return {
+        name: 'Unknown',
+        color: '#6c757d',
+        description: 'Assessment completed'
+      };
+  }
+}
+
+/**
+ * Calculate completion percentage
+ */
+export function calculateCompletionPercentage(
+  answeredQuestions: number,
+  totalQuestions: number
+): number {
+  if (totalQuestions === 0) return 0;
+  return Math.round((answeredQuestions / totalQuestions) * 100);
+}
+
+/**
+ * Generate shareable results message
+ */
+export function generateShareMessage(result: SubmitQuizResult): string {
+  return `I just completed an AI Governance Assessment and scored ${result.governScore}/5.0 (${result.maturityTier} level)! 
+
+My strongest area: ${result.insights.strongestArea}
+Priority focus: ${result.insights.priorityFocus}
+
+Take your own assessment at https://ai-risk-tools.vercel.app/quiz`;
+}
+
+/**
+ * Hook for quiz submission with loading state
+ */
+export function useQuizSubmission() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (payload: SubmitQuizPayload): Promise<SubmitQuizResult | null> => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Validate payload
+      if (!validateEmail(payload.email)) {
+        throw new APIError('Please enter a valid email address', 400);
+      }
+
+      const validationErrors = validateQuizResponses(payload.responses);
+      if (validationErrors.length > 0) {
+        throw new APIError(validationErrors[0], 400);
+      }
+
+      // Submit quiz
+      const result = await submitQuiz(payload);
+      return result;
+
+    } catch (err) {
+      const errorMessage = err instanceof APIError 
+        ? err.message 
+        : 'An unexpected error occurred. Please try again.';
+      
+      setError(errorMessage);
+      return null;
+
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return {
+    submit,
+    isSubmitting,
+    error,
+    clearError: () => setError(null)
+  };
+}

@@ -2,13 +2,22 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { getAvailableQuestions, QuizQuestion } from '@/data/questions';
+import { useRouter } from 'next/navigation';
+import { getAvailableQuestions } from '@/data/questions';
+import { submitQuiz, validateEmail, type QuizResponse } from '@/lib/api-client';
 
 export default function AssessPage() {
+  const router = useRouter();
   const questions = getAvailableQuestions();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [responses, setResponses] = useState<Record<string, number>>({});
   const [isComplete, setIsComplete] = useState(false);
+  
+  // Email capture and submission states
+  const [email, setEmail] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleAnswer = (questionId: string, value: number) => {
     setResponses(prev => ({ ...prev, [questionId]: value }));
@@ -28,48 +37,165 @@ export default function AssessPage() {
     }
   };
 
+  const handleSubmitAssessment = async () => {
+    if (!validateEmail(email)) {
+      setSubmitError('Please enter a valid email address');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Convert responses to the format expected by the API
+      const quizResponses: QuizResponse[] = questions.map(question => ({
+        questionId: question.id,
+        subcategory: question.subcategory,
+        weight: question.weight,
+        selectedValue: responses[question.id] || 0,
+        selectedText: question.options.find(opt => opt.value === responses[question.id])?.text || 'No answer'
+      }));
+
+      // Submit to API
+      const result = await submitQuiz({
+        email,
+        organizationName: organizationName || undefined,
+        responses: quizResponses,
+        completedAt: new Date().toISOString()
+      });
+
+      // Redirect to results page with the results
+      const resultsParams = new URLSearchParams({
+        score: result.governScore.toString(),
+        tier: result.maturityTier,
+        strongestArea: result.insights.strongestArea,
+        priorityFocus: result.insights.priorityFocus,
+        email: email,
+        assessmentId: result.assessmentId
+      });
+
+      router.push(`/quiz/results?${resultsParams.toString()}`);
+
+    } catch (error: any) {
+      setSubmitError(error.message || 'Failed to submit assessment. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const currentQ = questions[currentQuestion];
   const selectedValue = responses[currentQ?.id];
   const canProceed = selectedValue !== undefined;
+  const answeredQuestions = Object.keys(responses).length;
 
+  // Email capture form (shown after completing all questions)
   if (isComplete) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-        <div className="max-w-2xl mx-auto p-8 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl text-center border border-white/20">
-          <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+        <div className="max-w-2xl mx-auto p-8 bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-gradient-to-r from-green-400 to-blue-500 rounded-full mx-auto mb-6 flex items-center justify-center">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
+              Assessment Complete!
+            </h1>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              You answered {answeredQuestions} out of {questions.length} questions. 
+              Enter your email to receive your personalized AI governance maturity report.
+            </p>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
-            Assessment Complete!
-          </h1>
-          <p className="text-gray-600 mb-8 leading-relaxed">
-            Thank you for completing the GOVERN assessment. You answered {questions.length} questions. Next we&apos;ll calculate your maturity score and provide personalized recommendations.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button 
-              onClick={() => {
-                setCurrentQuestion(0);
-                setResponses({});
-                setIsComplete(false);
-              }}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
-            >
-              Retake Assessment
-            </button>
-            <Link 
-              href="/quiz"
-              className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg inline-block"
-            >
-              Back to Quiz Info
-            </Link>
+
+          {/* Email Capture Form */}
+          <div className="space-y-6">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address *
+              </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your.email@company.com"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="organization" className="block text-sm font-medium text-gray-700 mb-2">
+                Organization Name (Optional)
+              </label>
+              <input
+                type="text"
+                id="organization"
+                value={organizationName}
+                onChange={(e) => setOrganizationName(e.target.value)}
+                placeholder="Your Company Inc."
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              />
+            </div>
+
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p className="text-red-800 text-sm">{submitError}</p>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <button
+                onClick={handleSubmitAssessment}
+                disabled={isSubmitting || !email}
+                className={`flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 ${
+                  isSubmitting || !email
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg'
+                }`}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Calculating Results...
+                  </span>
+                ) : (
+                  'Get My Results & Report'
+                )}
+              </button>
+              
+              <button 
+                onClick={() => {
+                  setCurrentQuestion(0);
+                  setResponses({});
+                  setIsComplete(false);
+                  setEmail('');
+                  setOrganizationName('');
+                  setSubmitError(null);
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
+              >
+                Retake Assessment
+              </button>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
+              <p className="text-blue-800 text-sm">
+                <strong>What happens next:</strong> We'll calculate your AI governance maturity score, 
+                generate personalized recommendations, and email you a detailed PDF report within minutes.
+              </p>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  // Quiz questions (unchanged from your original)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       <div className="container mx-auto px-4 py-8">
